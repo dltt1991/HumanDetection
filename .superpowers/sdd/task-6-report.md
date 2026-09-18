@@ -92,3 +92,20 @@ PASS (4/4 tests; 0 failures)
 No production code or README content was changed by this review fix. The
 interactive macOS camera check remains the only current manual acceptance
 boundary; deferred Intel/ARM/RKNN work was not tested.
+
+## Reserved Backend Documentation Fix
+
+The active Task 4 plan wording now matches the implemented reserved-interface
+behavior: argument validation accepts `opencv` and `rknn`, while selecting
+`rknn` reports that the backend is unavailable in this build. Other backend
+values remain invalid.
+
+Verification for this fix:
+
+```text
+Focused consistency scan                  PASS
+git diff --check                          PASS
+ctest --test-dir build --output-on-failure PASS (4/4)
+```
+
+No production code, tests, README content, or design specification was changed.

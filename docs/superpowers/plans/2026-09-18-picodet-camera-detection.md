@@ -288,7 +288,7 @@ Register a CTest named `help_test` that runs `human_detection --help` and requir
 
 - [ ] **Step 2: Implement argument validation and camera loop**
 
-Use defaults `backend=opencv`, `camera=0`, `confidence=0.40`, `nms=0.50`, `width=1280`, `height=720`, and `model=models/picodet_s_320_person.onnx`. Reject thresholds outside `[0,1]`, negative camera indices, and any backend other than `opencv`.
+Use defaults `backend=opencv`, `camera=0`, `confidence=0.40`, `nms=0.50`, `width=1280`, `height=720`, and `model=models/picodet_s_320_person.onnx`. Reject thresholds outside `[0,1]`, negative camera indices, and backend values other than `opencv` or `rknn`; accept `rknn` as a reserved interface value, then report that it is unavailable in this build.
 
 Open `cv::VideoCapture(camera, cv::CAP_ANY)`, request width/height, preprocess each frame, infer, decode, restore boxes, draw green 2-pixel rectangles and `person %.2f`, calculate moving FPS over 30 frames, and exit on `q`, Escape, or `cv::getWindowProperty(window, cv::WND_PROP_VISIBLE) < 1`.
 
