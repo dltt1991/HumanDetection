@@ -1,6 +1,9 @@
 #include "opencv_backend.hpp"
 #include "picodet_postprocess.hpp"
 #include "preprocess.hpp"
+#ifdef ENABLE_RKNN
+#include "rknn_backend.hpp"
+#endif
 
 #include <algorithm>
 #include <charconv>
@@ -11,6 +14,7 @@
 #include <deque>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -28,6 +32,7 @@ struct Options {
   int width = 1280;
   int height = 720;
   std::filesystem::path model = "models/picodet_s_320_person.onnx";
+  bool model_set = false;
 };
 
 void print_help() {
@@ -81,7 +86,10 @@ Options parse_options(int argc, char** argv) {
     else if (option == "--nms") options.nms = parse_float(value, option);
     else if (option == "--width") options.width = parse_int(value, option);
     else if (option == "--height") options.height = parse_int(value, option);
-    else if (option == "--model") options.model = value;
+    else if (option == "--model") {
+      options.model = value;
+      options.model_set = true;
+    }
     else throw std::invalid_argument("unknown option: " + option);
   }
 
@@ -100,10 +108,19 @@ Options parse_options(int argc, char** argv) {
 }
 
 int run(const Options& options) {
-  if (options.backend == "rknn")
+  std::unique_ptr<InferenceBackend> backend;
+  if (options.backend == "rknn") {
+#ifdef ENABLE_RKNN
+    auto model = options.model;
+    if (!options.model_set)
+      model = "models/picodet_s_320_person_int8.rknn";
+    backend = std::make_unique<RknnBackend>(model);
+#else
     throw std::runtime_error("rknn backend is not available in this build");
-
-  OpenCvBackend backend(options.model);
+#endif
+  } else {
+    backend = std::make_unique<OpenCvBackend>(options.model);
+  }
   cv::VideoCapture camera(options.camera, cv::CAP_ANY);
   if (!camera.isOpened())
     throw std::runtime_error("failed to open camera " +
@@ -119,9 +136,10 @@ int run(const Options& options) {
     if (!camera.read(frame) || frame.empty())
       throw std::runtime_error("camera returned an empty frame");
 
-    const auto prep = preprocess(frame);
+    const auto prep = options.backend == "rknn" ? preprocess_rknn(frame)
+                                                 : preprocess(frame);
     for (const auto& detection :
-         decode_picodet(backend.infer(prep.blob), options.confidence,
+         decode_picodet(backend->infer(prep.blob), options.confidence,
                         options.nms)) {
       const auto box = restore_box(detection.box, prep, frame.size());
       cv::rectangle(frame, box, {0, 255, 0}, 2);

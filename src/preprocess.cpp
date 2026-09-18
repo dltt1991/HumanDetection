@@ -19,6 +19,15 @@ PreprocessResult preprocess(const cv::Mat& bgr) {
           320.0f / static_cast<float>(bgr.rows)};
 }
 
+PreprocessResult preprocess_rknn(const cv::Mat& bgr) {
+  if (bgr.empty()) throw std::invalid_argument("input frame is empty");
+  cv::Mat resized, rgb;
+  cv::resize(bgr, resized, {320, 320}, 0, 0, cv::INTER_CUBIC);
+  cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
+  return {rgb, 320.0f / static_cast<float>(bgr.cols),
+          320.0f / static_cast<float>(bgr.rows)};
+}
+
 cv::Rect2f restore_box(const cv::Rect2f& box, const PreprocessResult& prep,
                        cv::Size source) {
   const float x1 = std::clamp(box.x / prep.scale_x, 0.0f, float(source.width));
