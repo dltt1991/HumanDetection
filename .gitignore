@@ -1,5 +1,5 @@
 .worktrees/
-build/
+/build*/
 models/*.onnx
 models/*.rknn
 calibration/images/
