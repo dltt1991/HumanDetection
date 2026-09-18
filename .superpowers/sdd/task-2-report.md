@@ -91,3 +91,45 @@ Total Test time (real) = 0.53 sec
 
 None within the Task 2 contract. The decoder intentionally assumes the fixed
 320x320 PicoDet output grids and person class index 0 specified by the brief.
+
+## Review Fix
+
+Rejected shape-valid non-contiguous output tensors before the decoder uses flat
+pointer indexing. The regression test constructs a padded 3D ROI and verifies
+that the runtime error clearly identifies the continuity requirement.
+
+RED command:
+
+```sh
+cmake --build build --target postprocess_test && ./build/postprocess_test
+```
+
+Result (exit 134):
+
+```text
+Assertion failed: (threw), function test_rejects_non_contiguous_tensors,
+file postprocess_test.cpp, line 102.
+```
+
+GREEN focused command:
+
+```sh
+cmake --build build --target postprocess_test && ./build/postprocess_test
+```
+
+Result: exit 0; `postprocess_test` built and completed without output.
+
+Full suite command:
+
+```sh
+ctest --test-dir build --output-on-failure
+```
+
+Result (exit 0):
+
+```text
+100% tests passed, 0 tests failed out of 2
+Total Test time (real) = 0.25 sec
+```
+
+The reviewer's Minor coverage suggestion remains out of scope as requested.

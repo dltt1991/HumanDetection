@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
@@ -83,6 +84,24 @@ void test_rejects_malformed_shapes() {
   assert(threw);
 }
 
+void test_rejects_non_contiguous_tensors() {
+  auto outputs = empty_outputs();
+  const int sizes[] = {1, 1600, 81};
+  cv::Mat padded(3, sizes, CV_32F, cv::Scalar(0.0f));
+  const cv::Range ranges[] = {cv::Range::all(), cv::Range::all(),
+                              cv::Range(0, 80)};
+  outputs[0] = padded(ranges);
+  assert(!outputs[0].isContinuous());
+
+  bool threw = false;
+  try {
+    decode_picodet(outputs, 0.5f, 0.5f);
+  } catch (const std::runtime_error& error) {
+    threw = std::string(error.what()).find("continuous") != std::string::npos;
+  }
+  assert(threw);
+}
+
 }  // namespace
 
 int main() {
@@ -90,4 +109,5 @@ int main() {
   test_filters_low_scores();
   test_suppresses_lower_scored_overlap();
   test_rejects_malformed_shapes();
+  test_rejects_non_contiguous_tensors();
 }

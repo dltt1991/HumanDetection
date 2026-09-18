@@ -46,6 +46,9 @@ std::vector<Detection> decode_picodet(const std::vector<cv::Mat>& outputs,
         !has_shape(box_tensor, rows[level], 32)) {
       throw std::runtime_error("invalid PicoDet output tensor");
     }
+    if (!score_tensor.isContinuous() || !box_tensor.isContinuous()) {
+      throw std::runtime_error("PicoDet output tensors must be continuous");
+    }
 
     const int stride = strides[level];
     const int grid_width = 320 / stride;
