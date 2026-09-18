@@ -26,7 +26,7 @@ OpenCV owns camera capture, image display, drawing, and the portable CPU inferen
 The application consists of these focused units:
 
 - `main.cpp`: arguments, camera lifecycle, frame loop, FPS, and exit handling.
-- `preprocess.cpp`: aspect-preserving letterbox to 320x320 and backend-ready RGB input.
+- `preprocess.cpp`: PaddleDetection-compatible resize to 320x320, normalization, and backend-ready RGB input.
 - `opencv_backend.cpp`: load and execute the ONNX model with OpenCV DNN.
 - `rknn_backend.cpp`: conditionally compiled RKNN Runtime adapter for the INT8 model.
 - `picodet_postprocess.cpp`: decode PicoDet outputs, keep `person`, apply confidence filtering and NMS, and map boxes back through letterbox coordinates.
@@ -38,10 +38,10 @@ A small inference-backend interface is justified because there are two real impl
 1. Parse arguments and select `opencv` or `rknn`.
 2. Load the matching model and validate its input/output shapes.
 3. Open the selected camera and request 1280x720 capture by default.
-4. Letterbox each frame to 320x320 while recording scale and padding.
+4. Resize each frame to 320x320 while recording independent horizontal and vertical scales.
 5. Run inference on the selected backend.
 6. Decode the fixed PicoDet feature outputs, select class `person`, filter by confidence, and apply class-independent NMS.
-7. Undo letterbox scaling, clamp boxes to the source frame, and draw confidence labels and FPS.
+7. Undo horizontal and vertical scaling, clamp boxes to the source frame, and draw confidence labels and FPS.
 8. Display the frame until `q`, Escape, window closure, camera failure, or inference failure.
 
 ## Runtime Interface
@@ -82,7 +82,7 @@ The README includes macOS camera-permission instructions and RK3568 requirements
 
 One lightweight assertion-based test executable covers:
 
-- Letterbox scaling and inverse coordinate mapping.
+- 320x320 resize normalization and inverse coordinate mapping.
 - Confidence and `person` class filtering.
 - NMS behavior and frame-bound clipping.
 - Rejection of unexpected output shapes.
