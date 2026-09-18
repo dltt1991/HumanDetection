@@ -2,21 +2,21 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a C++17 USB-camera person detector using PicoDet-S 320x320, OpenCV DNN on macOS/Intel/ARM CPUs, and an optional RKNN backend for RK3568.
+**Current goal:** Build and accept a C++17 USB-camera person detector using PicoDet-S 320x320 and OpenCV DNN on macOS.
 
-**Architecture:** OpenCV handles capture, display, CPU inference, and drawing. Both OpenCV DNN and optional RKNN Runtime produce the eight raw PicoDet tensors; shared code decodes distributional boxes at strides 8/16/32/64, filters COCO class 0, runs NMS, and maps coordinates to the source frame.
+**Current architecture:** OpenCV handles capture, display, CPU inference, and drawing. OpenCV DNN produces the eight raw PicoDet tensors; shared code decodes distributional boxes at strides 8/16/32/64, filters COCO class 0, runs NMS, and maps coordinates to the source frame.
 
-**Tech Stack:** C++17, CMake 3.16+, OpenCV 4 (`core`, `imgproc`, `highgui`, `videoio`, `dnn`), PaddleDetection PicoDet-S 320 ONNX, optional RKNN Runtime C API, POSIX shell, Python 3 for RKNN conversion.
+**Current tech stack:** C++17, CMake 3.16+, OpenCV 4 (`core`, `imgproc`, `highgui`, `videoio`, `dnn`), PaddleDetection PicoDet-S 320 ONNX, and POSIX shell on macOS.
 
-> **Scope update (2026-09-18):** The current acceptance target is macOS with the OpenCV backend. Task 5 is deferred, and Intel Linux, ARM Linux CPU, RKNN conversion, cross-build, and RK3568 NPU support remain future work. The original Task 5 details below are retained as planning history, not as implemented or currently accepted functionality.
+> **Current scope (2026-09-18):** Only macOS with the OpenCV backend is implemented and subject to this plan's acceptance requirements. Intel Linux, ARM Linux CPU, RKNN conversion, cross-build, and RK3568 NPU support are deferred. The explicitly labeled historical section below preserves the original ideas for reference; it contains no current implementation steps, deliverables, or acceptance requirements.
 
 ## Global Constraints
 
-- Input is fixed at `1x3x320x320` for every backend.
+- Input is fixed at `1x3x320x320` for the OpenCV backend.
 - Official preprocessing is direct resize with `INTER_CUBIC`, RGB conversion, scale `1/255`, mean `[0.485, 0.456, 0.406]`, and std `[0.229, 0.224, 0.225]`.
-- CPU model is `models/picodet_s_320_person.onnx`; NPU model is `models/picodet_s_320_person_int8.rknn`.
+- The model is `models/picodet_s_320_person.onnx`.
 - Only COCO class `0` (`person`) is emitted.
-- RKNN support is off by default and must not be required for normal macOS/CPU builds.
+- Only the OpenCV backend is currently supported; RKNN is not an implemented build option or acceptance target.
 - Model binaries, build outputs, and calibration images are excluded from Git.
 - Tracking, distance estimation, reversing-zone alarms, and vehicle-control integration are excluded.
 
@@ -288,7 +288,7 @@ Register a CTest named `help_test` that runs `human_detection --help` and requir
 
 - [ ] **Step 2: Implement argument validation and camera loop**
 
-Use defaults `backend=opencv`, `camera=0`, `confidence=0.40`, `nms=0.50`, `width=1280`, `height=720`, and `model=models/picodet_s_320_person.onnx`. Reject thresholds outside `[0,1]`, negative camera indices, and any backend other than `opencv` or `rknn`.
+Use defaults `backend=opencv`, `camera=0`, `confidence=0.40`, `nms=0.50`, `width=1280`, `height=720`, and `model=models/picodet_s_320_person.onnx`. Reject thresholds outside `[0,1]`, negative camera indices, and any backend other than `opencv`.
 
 Open `cv::VideoCapture(camera, cv::CAP_ANY)`, request width/height, preprocess each frame, infer, decode, restore boxes, draw green 2-pixel rectangles and `person %.2f`, calculate moving FPS over 30 frames, and exit on `q`, Escape, or `cv::getWindowProperty(window, cv::WND_PROP_VISIBLE) < 1`.
 
@@ -311,7 +311,9 @@ git add CMakeLists.txt src/main.cpp
 git commit -m "feat: add realtime camera detection"
 ```
 
-### Task 5: Optional RK3568 RKNN Backend And Conversion
+### Historical/Deferred Task 5: Optional RK3568 RKNN Backend And Conversion
+
+> **Not active:** Everything in this Task 5 section is retained from the original plan as historical design detail only. None of its files, interfaces, steps, commands, expected results, or commit instructions are current deliverables or acceptance requirements. RKNN and RK3568 work must be separately respecified before implementation.
 
 **Files:**
 - Create: `src/rknn_backend.hpp`
@@ -392,18 +394,18 @@ git add CMakeLists.txt .gitignore src/rknn_backend.* scripts/convert_to_rknn.py 
 git commit -m "feat: add optional RK3568 backend"
 ```
 
-### Task 6: Documentation And Final Verification
+### Task 6: macOS/OpenCV Documentation And Final Verification
 
 **Files:**
 - Create: `README.md`
 - Modify: `docs/superpowers/specs/2026-09-18-picodet-camera-detection-design.md`
 
 **Interfaces:**
-- Documents: macOS build/run, Intel/ARM CPU build, RKNN conversion/build, camera permissions, calibration data, and known hardware-only verification.
+- Documents: macOS build/run, OpenCV backend usage, camera permissions, and known interactive verification boundaries.
 
 - [ ] **Step 1: Write README commands that match the implemented CLI**
 
-Include `brew install cmake opencv`, model download, CMake build, CTest, `./build/human_detection --camera 0`, model/threshold overrides, macOS Privacy & Security camera permission, Linux OpenCV package guidance, RKNN conversion environment, cross-build command, and board invocation with `--backend rknn`.
+Include `brew install cmake opencv`, model download, CMake build, CTest, `./build/human_detection --camera 0`, model/threshold overrides, and macOS Privacy & Security camera permission. Do not present Linux, ARM, RKNN conversion, cross-build, or RK3568 board instructions as implemented or currently supported.
 
 - [ ] **Step 2: Run formatting-free static checks and all available tests**
 
@@ -429,4 +431,4 @@ git commit -m "docs: add build and deployment guide"
 
 - [ ] **Step 4: Record verification boundaries**
 
-The completion report must distinguish automated Mac CPU checks from unverified interactive camera and RK3568 board checks. It must not claim NPU latency, INT8 accuracy, or driver compatibility without results from the target board.
+The completion report must distinguish automated macOS/OpenCV checks from the unverified interactive camera check. Any mention of Intel Linux, ARM Linux, RKNN conversion, cross-builds, RK3568 boards, NPU latency, INT8 accuracy, or driver compatibility must identify that material as historical or deferred and outside current acceptance.
