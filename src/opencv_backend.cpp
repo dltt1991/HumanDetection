@@ -29,6 +29,9 @@ OpenCvBackend::OpenCvBackend(std::filesystem::path model_path) {
     throw std::runtime_error("failed to load model '" + model_path.string() +
                              "': " + error.what());
   }
+
+  const int shape[] = {1, 3, 320, 320};
+  infer(cv::Mat(4, shape, CV_32F, cv::Scalar(0)));
 }
 
 std::vector<cv::Mat> OpenCvBackend::infer(const cv::Mat& blob) {

@@ -1,11 +1,20 @@
 #include "picodet_postprocess.hpp"
 
-#include <cassert>
 #include <cmath>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
 namespace {
+
+int failures = 0;
+
+void check(bool condition, const char* message) {
+  if (!condition) {
+    std::cerr << "FAIL: " << message << '\n';
+    ++failures;
+  }
+}
 
 cv::Mat tensor(int rows, int columns, float value) {
   const int sizes[] = {1, rows, columns};
@@ -35,19 +44,21 @@ void test_decodes_distribution_distances() {
   set_candidate(outputs, 10 * 40 + 12, 0.9f, bins);
 
   const auto detections = decode_picodet(outputs, 0.5f, 0.5f);
-  assert(detections.size() == 1);
-  assert(std::abs(detections[0].score - 0.9f) < 1e-6f);
-  assert(std::abs(detections[0].box.x - 84.0f) < 0.1f);
-  assert(std::abs(detections[0].box.y - 68.0f) < 0.1f);
-  assert(std::abs(detections[0].box.width - 32.0f) < 0.1f);
-  assert(std::abs(detections[0].box.height - 32.0f) < 0.1f);
+  check(detections.size() == 1, "one distribution detection");
+  check(std::abs(detections[0].score - 0.9f) < 1e-6f, "detection score");
+  check(std::abs(detections[0].box.x - 84.0f) < 0.1f, "detection x");
+  check(std::abs(detections[0].box.y - 68.0f) < 0.1f, "detection y");
+  check(std::abs(detections[0].box.width - 32.0f) < 0.1f,
+        "detection width");
+  check(std::abs(detections[0].box.height - 32.0f) < 0.1f,
+        "detection height");
 }
 
 void test_filters_low_scores() {
   auto outputs = empty_outputs();
   const int bins[] = {2, 2, 2, 2};
   set_candidate(outputs, 10 * 40 + 12, 0.4f, bins);
-  assert(decode_picodet(outputs, 0.5f, 0.5f).empty());
+  check(decode_picodet(outputs, 0.5f, 0.5f).empty(), "low score filtered");
 }
 
 void test_suppresses_lower_scored_overlap() {
@@ -58,8 +69,9 @@ void test_suppresses_lower_scored_overlap() {
   set_candidate(outputs, 10 * 40 + 13, 0.8f, second_bins);
 
   const auto detections = decode_picodet(outputs, 0.5f, 0.5f);
-  assert(detections.size() == 1);
-  assert(std::abs(detections[0].score - 0.9f) < 1e-6f);
+  check(detections.size() == 1, "overlap suppressed");
+  check(std::abs(detections[0].score - 0.9f) < 1e-6f,
+        "higher overlap score retained");
 }
 
 void test_rejects_malformed_shapes() {
@@ -71,7 +83,7 @@ void test_rejects_malformed_shapes() {
   } catch (const std::runtime_error&) {
     threw = true;
   }
-  assert(threw);
+  check(threw, "rejects wrong tensor rows");
 
   outputs = empty_outputs();
   outputs[0] = cv::Mat(1600, 80, CV_32F, cv::Scalar(0.0f));
@@ -81,7 +93,7 @@ void test_rejects_malformed_shapes() {
   } catch (const std::runtime_error&) {
     threw = true;
   }
-  assert(threw);
+  check(threw, "rejects wrong tensor dimensions");
 }
 
 void test_rejects_non_contiguous_tensors() {
@@ -91,7 +103,7 @@ void test_rejects_non_contiguous_tensors() {
   const cv::Range ranges[] = {cv::Range::all(), cv::Range::all(),
                               cv::Range(0, 80)};
   outputs[0] = padded(ranges);
-  assert(!outputs[0].isContinuous());
+  check(!outputs[0].isContinuous(), "test tensor is non-contiguous");
 
   bool threw = false;
   try {
@@ -99,7 +111,7 @@ void test_rejects_non_contiguous_tensors() {
   } catch (const std::runtime_error& error) {
     threw = std::string(error.what()).find("continuous") != std::string::npos;
   }
-  assert(threw);
+  check(threw, "rejects non-contiguous tensor");
 }
 
 }  // namespace
@@ -110,4 +122,5 @@ int main() {
   test_suppresses_lower_scored_overlap();
   test_rejects_malformed_shapes();
   test_rejects_non_contiguous_tensors();
+  return failures == 0 ? 0 : 1;
 }
