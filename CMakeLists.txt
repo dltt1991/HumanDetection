@@ -11,6 +11,9 @@ add_library(human_detection_core
 target_include_directories(human_detection_core PUBLIC src)
 target_link_libraries(human_detection_core PUBLIC ${OpenCV_LIBS})
 
+add_executable(human_detection src/main.cpp)
+target_link_libraries(human_detection PRIVATE human_detection_core)
+
 enable_testing()
 add_executable(preprocess_test tests/preprocess_test.cpp)
 target_link_libraries(preprocess_test PRIVATE human_detection_core)
@@ -25,3 +28,7 @@ target_link_libraries(model_smoke_test PRIVATE human_detection_core)
 target_compile_definitions(
   model_smoke_test PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME model_smoke_test COMMAND model_smoke_test)
+
+add_test(NAME help_test COMMAND human_detection --help)
+set_tests_properties(help_test PROPERTIES
+  PASS_REGULAR_EXPRESSION "--backend[^\n]*\n  --camera[^\n]*\n  --confidence[^\n]*\n  --nms")
