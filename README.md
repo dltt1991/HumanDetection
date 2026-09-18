@@ -94,9 +94,10 @@ Override the model path and detection thresholds as needed:
   --nms 0.45
 ```
 
-`--confidence` controls the minimum person score; increasing it reduces weak
-detections. `--nms` controls overlap suppression; both values must be between
-`0` and `1`. Run `./build/human_detection --help` for the complete CLI.
+`--confidence` controls the minimum person score and defaults to `0.60`;
+increasing it reduces weak detections. `--nms` controls overlap suppression;
+both values must be between `0` and `1`. Run `./build/human_detection --help`
+for the complete CLI.
 
 ## Backend scope
 

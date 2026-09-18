@@ -24,7 +24,7 @@ namespace {
 struct Options {
   std::string backend = "opencv";
   int camera = 0;
-  float confidence = 0.40f;
+  float confidence = 0.60f;
   float nms = 0.50f;
   float box_smoothing = 0.35f;
   int width = 1280;
@@ -37,7 +37,7 @@ void print_help() {
       << "Usage: human_detection [options]\n"
       << "  --backend opencv|rknn  inference backend (default: opencv)\n"
       << "  --camera INDEX         camera index (default: 0)\n"
-      << "  --confidence VALUE     person threshold (default: 0.40)\n"
+      << "  --confidence VALUE     person threshold (default: 0.60)\n"
       << "  --nms VALUE            IoU threshold (default: 0.50)\n"
       << "  --box-smoothing VALUE box EMA factor (default: 0.35)\n"
       << "  --width PIXELS         requested capture width (default: 1280)\n"

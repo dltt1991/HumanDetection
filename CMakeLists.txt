@@ -36,7 +36,7 @@ add_test(NAME model_smoke_test COMMAND model_smoke_test)
 
 add_test(NAME help_test COMMAND human_detection --help)
 set_tests_properties(help_test PROPERTIES
-  PASS_REGULAR_EXPRESSION "--backend[^\n]*\n  --camera[^\n]*\n  --confidence[^\n]*\n  --nms[^\n]*\n  --box-smoothing")
+  PASS_REGULAR_EXPRESSION "--backend[^\n]*\n  --camera[^\n]*\n  --confidence[^\n]*default: 0\\.60[^\n]*\n  --nms[^\n]*\n  --box-smoothing")
 
 add_test(NAME invalid_box_smoothing_test
   COMMAND ${CMAKE_COMMAND}
