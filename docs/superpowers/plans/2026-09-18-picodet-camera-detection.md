@@ -8,6 +8,8 @@
 
 **Tech Stack:** C++17, CMake 3.16+, OpenCV 4 (`core`, `imgproc`, `highgui`, `videoio`, `dnn`), PaddleDetection PicoDet-S 320 ONNX, optional RKNN Runtime C API, POSIX shell, Python 3 for RKNN conversion.
 
+> **Scope update (2026-09-18):** The current acceptance target is macOS with the OpenCV backend. Task 5 is deferred, and Intel Linux, ARM Linux CPU, RKNN conversion, cross-build, and RK3568 NPU support remain future work. The original Task 5 details below are retained as planning history, not as implemented or currently accepted functionality.
+
 ## Global Constraints
 
 - Input is fixed at `1x3x320x320` for every backend.
