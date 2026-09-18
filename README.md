@@ -1,36 +1,35 @@
-# Human Detection
+# 人体检测
 
-`human_detection` is a C++17 macOS camera application that runs PicoDet person
-detection through OpenCV DNN. It displays the selected camera, draws person
-bounding boxes and confidence scores, and reports a rolling frame rate.
+`human_detection` 是一个使用 C++17 编写的 macOS 摄像头应用。程序通过
+OpenCV DNN 运行 PicoDet 人体检测模型，可显示指定摄像头的实时画面、绘制人体
+检测框和置信度，并显示滚动计算的帧率。
 
-The current supported inference backend is `opencv`. `InferenceBackend` and the
-`--backend` option are extension points for future CPU and NPU backends; RKNN is
-not implemented in this project scope.
+当前支持的推理后端为 `opencv`。`InferenceBackend` 接口和 `--backend` 参数为
+后续接入 CPU 和 NPU 后端预留了扩展点；本项目当前尚未实现 RKNN。
 
-## macOS prerequisites
+## macOS 环境要求
 
-Install CMake and OpenCV with Homebrew:
+使用 Homebrew 安装 CMake 和 OpenCV：
 
 ```sh
 brew install cmake opencv
 ```
 
-The application needs a camera visible to macOS. A built-in camera, USB webcam,
-or USB capture device can be used.
+程序需要使用 macOS 能够识别的摄像头，包括内置摄像头、USB 摄像头或 USB
+视频采集设备。
 
-## Download the model
+## 下载模型
 
-From the repository root, download the PicoDet-S 320x320 ONNX model:
+在仓库根目录运行以下命令，下载 PicoDet-S 320x320 ONNX 模型：
 
 ```sh
 ./scripts/download_model.sh
 ```
 
-The script writes `models/picodet_s_320_person.onnx`. Model files are excluded
-from Git.
+脚本会将模型保存为 `models/picodet_s_320_person.onnx`。模型文件不会提交到
+Git 仓库。
 
-## Build and test
+## 构建与测试
 
 ```sh
 cmake -S . -B build
@@ -38,54 +37,51 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-The model smoke test exits successfully without exercising inference when the
-model has not been downloaded. Download it first to verify ONNX loading and the
-eight expected PicoDet output tensors.
+如果尚未下载模型，模型冒烟测试会跳过实际推理并正常退出。请先下载模型，以
+验证 ONNX 文件能否正常加载，以及模型是否输出 PicoDet 预期的 8 个张量。
 
-## Camera permission
+## 摄像头权限
 
-The first camera launch may prompt for permission. Allow camera access for the
-terminal application used to start `human_detection`. To review or change the
-setting, open **System Settings > Privacy & Security > Camera**, enable that
-terminal application, and restart it before trying again.
+首次启动摄像头时，macOS 可能会请求访问权限。请允许启动
+`human_detection` 的终端应用访问摄像头。如需查看或修改权限，请打开
+**系统设置 > 隐私与安全性 > 相机**，启用对应的终端应用，然后重启该应用再试。
 
-Permission prompts and live preview behavior require an interactive macOS
-session and must be verified manually.
+权限弹窗和实时预览需要在可交互的 macOS 会话中手动验证。
 
-## Run
+## 运行
 
-Run with camera index `0`:
+使用编号为 `0` 的摄像头：
 
 ```sh
 ./build/human_detection --camera 0
 ```
 
-Tune bounding-box smoothing with:
+调整检测框平滑系数：
 
 ```sh
 ./build/human_detection --camera 0 --box-smoothing 0.35
 ```
 
-Lower values produce steadier but slower boxes, while higher values follow
-movement faster. A value of `1.0` disables coordinate smoothing. The tracker
-never buffers video frames.
+较小的数值会让检测框更稳定，但跟随速度更慢；较大的数值会让检测框更快地
+跟随目标。设置为 `1.0` 可关闭坐标平滑。跟踪器不会缓存视频帧，因此不会给
+预览画面增加延迟。
 
-Press `q` or Escape, or close the preview window, to exit.
+按 `q`、Escape，或者关闭预览窗口即可退出。
 
-If the wrong camera opens, try another zero-based index:
+如果打开了错误的摄像头，请尝试其他从 `0` 开始的设备编号：
 
 ```sh
 ./build/human_detection --camera 1
 ```
 
-Use `--width` and `--height` to request a capture size. Camera hardware may
-choose the nearest supported size:
+使用 `--width` 和 `--height` 可以指定期望的采集分辨率。摄像头硬件可能会选择
+最接近的受支持分辨率：
 
 ```sh
 ./build/human_detection --camera 1 --width 1920 --height 1080
 ```
 
-Override the model path and detection thresholds as needed:
+也可以按需指定模型路径和检测阈值：
 
 ```sh
 ./build/human_detection \
@@ -94,22 +90,19 @@ Override the model path and detection thresholds as needed:
   --nms 0.45
 ```
 
-`--confidence` controls the minimum person score and defaults to `0.60`;
-increasing it reduces weak detections. `--nms` controls overlap suppression;
-both values must be between `0` and `1`. Run `./build/human_detection --help`
-for the complete CLI.
+`--confidence` 控制人体检测的最低置信度，默认值为 `0.60`；提高该值可以减少
+低置信度检测。`--nms` 控制重叠检测框的抑制程度。两个参数的取值范围均为
+`0` 到 `1`。运行 `./build/human_detection --help` 可查看完整的命令行参数。
 
-## Backend scope
+## 后端支持范围
 
-`opencv` is the only backend currently available:
+当前仅支持 `opencv` 后端：
 
 ```sh
 ./build/human_detection --backend opencv --camera 0
 ```
 
-The abstract `InferenceBackend` interface and `--backend` selector reserve a
-stable integration point for later backends. Selecting `--backend rknn`
-currently exits with an explicit unsupported-backend error. Intel Linux, ARM
-Linux CPU deployment, RKNN conversion, cross-compilation, and RK3568 NPU
-runtime support are deferred future work; no working RKNN build or conversion
-commands are provided yet.
+抽象接口 `InferenceBackend` 和 `--backend` 参数为后续后端提供了稳定的接入点。
+当前选择 `--backend rknn` 会明确提示该后端不可用。Intel Linux、ARM Linux
+CPU 部署、RKNN 模型转换、交叉编译和 RK3568 NPU 运行时支持均属于后续工作；
+本项目目前不提供可用的 RKNN 构建或转换命令。
