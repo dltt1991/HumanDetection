@@ -5,6 +5,5 @@
 class InferenceBackend {
  public:
   virtual ~InferenceBackend() = default;
-  // Input is backend-ready: FP32 NCHW for OpenCV or uint8 RGB NHWC for RKNN.
-  virtual std::vector<cv::Mat> infer(const cv::Mat& input) = 0;
+  virtual std::vector<cv::Mat> infer(const cv::Mat& blob) = 0;
 };

@@ -3,4 +3,3 @@
 models/*.onnx
 models/*.rknn
 calibration/images/
-calibration/dataset.txt

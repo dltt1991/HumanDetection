@@ -14,12 +14,4 @@ int main() {
   assert(std::abs(box.y - 90.0f) < 1e-4f);
   assert(std::abs(box.width - 640.0f) < 1e-4f);
   assert(std::abs(box.height - 450.0f) < 1e-4f);
-
-  const auto rknn = preprocess_rknn(image);
-  assert(rknn.blob.rows == 320 && rknn.blob.cols == 320);
-  assert(rknn.blob.type() == CV_8UC3);
-  assert(rknn.blob.isContinuous());
-  assert(rknn.blob.at<cv::Vec3b>(0, 0) == cv::Vec3b(255, 0, 0));
-  assert(std::abs(rknn.scale_x - result.scale_x) < 1e-6f);
-  assert(std::abs(rknn.scale_y - result.scale_y) < 1e-6f);
 }
