@@ -36,4 +36,12 @@ add_test(NAME model_smoke_test COMMAND model_smoke_test)
 
 add_test(NAME help_test COMMAND human_detection --help)
 set_tests_properties(help_test PROPERTIES
-  PASS_REGULAR_EXPRESSION "--backend[^\n]*\n  --camera[^\n]*\n  --confidence[^\n]*\n  --nms")
+  PASS_REGULAR_EXPRESSION "--backend[^\n]*\n  --camera[^\n]*\n  --confidence[^\n]*\n  --nms[^\n]*\n  --box-smoothing")
+
+add_test(NAME invalid_box_smoothing_test
+  COMMAND ${CMAKE_COMMAND}
+    "-DTEST_EXECUTABLE=$<TARGET_FILE:human_detection>"
+    "-DTEST_OPTION=--box-smoothing"
+    "-DTEST_VALUE=0"
+    "-DEXPECTED_MESSAGE=box smoothing must be greater than 0 and at most 1"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/expect_failure.cmake")

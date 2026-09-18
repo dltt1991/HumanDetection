@@ -1,3 +1,4 @@
+#include "box_tracker.hpp"
 #include "opencv_backend.hpp"
 #include "picodet_postprocess.hpp"
 #include "preprocess.hpp"
@@ -25,6 +26,7 @@ struct Options {
   int camera = 0;
   float confidence = 0.40f;
   float nms = 0.50f;
+  float box_smoothing = 0.35f;
   int width = 1280;
   int height = 720;
   std::filesystem::path model = "models/picodet_s_320_person.onnx";
@@ -37,6 +39,7 @@ void print_help() {
       << "  --camera INDEX         camera index (default: 0)\n"
       << "  --confidence VALUE     person threshold (default: 0.40)\n"
       << "  --nms VALUE            IoU threshold (default: 0.50)\n"
+      << "  --box-smoothing VALUE box EMA factor (default: 0.35)\n"
       << "  --width PIXELS         requested capture width (default: 1280)\n"
       << "  --height PIXELS        requested capture height (default: 720)\n"
       << "  --model PATH           ONNX model path\n"
@@ -79,6 +82,8 @@ Options parse_options(int argc, char** argv) {
     else if (option == "--camera") options.camera = parse_int(value, option);
     else if (option == "--confidence") options.confidence = parse_float(value, option);
     else if (option == "--nms") options.nms = parse_float(value, option);
+    else if (option == "--box-smoothing")
+      options.box_smoothing = parse_float(value, option);
     else if (option == "--width") options.width = parse_int(value, option);
     else if (option == "--height") options.height = parse_int(value, option);
     else if (option == "--model") options.model = value;
@@ -94,6 +99,11 @@ Options parse_options(int argc, char** argv) {
     throw std::invalid_argument("confidence must be between 0 and 1");
   if (!std::isfinite(options.nms) || options.nms < 0 || options.nms > 1)
     throw std::invalid_argument("nms must be between 0 and 1");
+  if (!std::isfinite(options.box_smoothing) ||
+      options.box_smoothing <= 0 || options.box_smoothing > 1) {
+    throw std::invalid_argument(
+        "box smoothing must be greater than 0 and at most 1");
+  }
   if (options.width <= 0 || options.height <= 0)
     throw std::invalid_argument("capture width and height must be positive");
   return options;
@@ -113,6 +123,7 @@ int run(const Options& options) {
 
   constexpr char kWindow[] = "Human Detection";
   cv::namedWindow(kWindow, cv::WINDOW_AUTOSIZE);
+  BoxTracker tracker(options.box_smoothing);
   std::deque<std::chrono::steady_clock::time_point> frame_times;
   for (;;) {
     cv::Mat frame;
@@ -120,10 +131,16 @@ int run(const Options& options) {
       throw std::runtime_error("camera returned an empty frame");
 
     const auto prep = preprocess(frame);
+    std::vector<Detection> frame_detections;
     for (const auto& detection :
          decode_picodet(backend.infer(prep.blob), options.confidence,
                         options.nms)) {
-      const auto box = restore_box(detection.box, prep, frame.size());
+      frame_detections.push_back(
+          {restore_box(detection.box, prep, frame.size()), detection.score});
+    }
+
+    for (const auto& detection : tracker.update(frame_detections)) {
+      const auto& box = detection.box;
       cv::rectangle(frame, box, {0, 255, 0}, 2);
       char label[32];
       std::snprintf(label, sizeof(label), "person %.2f", detection.score);

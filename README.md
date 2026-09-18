@@ -60,6 +60,16 @@ Run with camera index `0`:
 ./build/human_detection --camera 0
 ```
 
+Tune bounding-box smoothing with:
+
+```sh
+./build/human_detection --camera 0 --box-smoothing 0.35
+```
+
+Lower values produce steadier but slower boxes, while higher values follow
+movement faster. A value of `1.0` disables coordinate smoothing. The tracker
+never buffers video frames.
+
 Press `q` or Escape, or close the preview window, to exit.
 
 If the wrong camera opens, try another zero-based index:
