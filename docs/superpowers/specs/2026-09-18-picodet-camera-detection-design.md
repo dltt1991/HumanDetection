@@ -106,7 +106,7 @@ threshold tuning, model download, build, test, and run commands.
 
 ## Testing
 
-One lightweight assertion-based test suite covers:
+One lightweight explicit-check test suite covers:
 
 - 320x320 resize normalization and inverse coordinate mapping.
 - Confidence and `person` class filtering.

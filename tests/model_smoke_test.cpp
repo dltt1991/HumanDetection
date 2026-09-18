@@ -1,5 +1,6 @@
 #include "opencv_backend.hpp"
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -30,7 +31,11 @@ void test_constructor_probes_output_contract(
 
   const auto incompatible =
       std::filesystem::temp_directory_path() /
-      "human_detection_incompatible_output.onnx";
+      ("human_detection_incompatible_output_" +
+       std::to_string(std::chrono::high_resolution_clock::now()
+                          .time_since_epoch()
+                          .count()) +
+       ".onnx");
   struct RemoveFile {
     std::filesystem::path path;
     ~RemoveFile() { std::filesystem::remove(path); }
